@@ -80,6 +80,8 @@ graph TD
         SC -- Usa --> PROV
         PROV -- Monta (NFS) --> NFS_VM
     end
+```
+
 3. Passo a Passo: Instalação e Configuração
 Esta seção detalha a criação das VMs e a instalação de todos os componentes necessários.
 
