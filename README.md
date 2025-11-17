@@ -8,7 +8,7 @@ HostnameIP EstáticoPropósitoControl Planek8s-cp192.168.3.120Gerencia o cluster
 
 ```mermaid
 graph TD
-    subgraph LAN (Rede 192.168.3.0/24)
+    subgraph "LAN (Rede 192.168.3.0/24)"
         direction LR
         USER[💻 Usuário]
         HOST[
