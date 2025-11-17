@@ -1,6 +1,13 @@
 
 
-Documentação: Laboratório Kubernetes em Hyper-V (Rede 192.168.3.0/24)1. Visão GeralEste documento descreve a arquitetura e a configuração de um cluster Kubernetes (K8s) "bare-metal" (em VMs), construído sobre o hipervisor Hyper-V. O ambiente foi projetado para testes de failover e aplicações "stateful", utilizando Kubeadm, Calico, MetalLB e um servidor NFS dedicado para armazenamento persistente.A rede do laboratório é a 192.168.3.0/24.2. Arquitetura e Planejamento de IPsA arquitetura consiste em um único Virtual Switch no Hyper-V conectado a 5 VMs com IPs estáticos. O MetalLB gerencia um pool de IPs virtuais para serviços externos.Planejamento de IPsVM / ServiçoHostnameIP EstáticoPropósitoControl Planek8s-cp192.168.3.120Gerencia o cluster K8s (API, etcd)Worker 1k8s-w1192.168.3.121Executa aplicações (Pods)Worker 2k8s-w2192.168.3.122Executa aplicações (Pods)Worker 3k8s-w3192.168.3.123Executa aplicações (Pods)NFS Serverk8s-nfs192.168.3.240Armazenamento persistente (Storage)RedeN/A192.168.3.0/24Sub-rede do laboratórioGatewayN/A192.168.3.254Roteador da redeMetalLB PoolN/A192.168.3.200-210IPs virtuais para serviços K8sDiagrama da ArquiteturaSnippet de códigograph TD
+Documentação: Laboratório Kubernetes em Hyper-V (Rede 192.168.3.0/24)1. Visão GeralEste documento descreve a arquitetura e a configuração de um cluster Kubernetes (K8s) "bare-metal" (em VMs), construído sobre o hipervisor Hyper-V. O ambiente foi projetado para testes de failover e aplicações "stateful", utilizando Kubeadm, Calico, MetalLB e um servidor NFS dedicado para armazenamento persistente.A rede do laboratório é a 192.168.3.0/24.2. Arquitetura e Planejamento de IPs
+A arquitetura consiste em um único Virtual Switch no Hyper-V conectado a 5 VMs com IPs estáticos. O MetalLB gerencia um pool de IPs virtuais para serviços externos.
+Planejamento de IPs
+VM / Serviço
+HostnameIP EstáticoPropósitoControl Planek8s-cp192.168.3.120Gerencia o cluster K8s (API, etcd)Worker 1k8s-w1192.168.3.121Executa aplicações (Pods)Worker 2k8s-w2192.168.3.122Executa aplicações (Pods)Worker 3k8s-w3192.168.3.123Executa aplicações (Pods)NFS Serverk8s-nfs192.168.3.240Armazenamento persistente (Storage)RedeN/A192.168.3.0/24Sub-rede do laboratórioGatewayN/A192.168.3.254Roteador da redeMetalLB PoolN/A192.168.3.200-210IPs virtuais para serviços K8s
+
+```mermaid
+graph TD
     subgraph LAN (Rede 192.168.3.0/24)
         direction LR
         USER[💻 Usuário]
@@ -55,6 +62,8 @@ Documentação: Laboratório Kubernetes em Hyper-V (Rede 192.168.3.0/24)1. Visã
         SC -- Usa --> PROV
         PROV -- Monta (NFS) --> NFS_VM
     end
+```
+
 3. Passo a Passo: Instalação e ConfiguraçãoEsta seção detalha a criação das VMs e a instalação de todos os componentes necessários.3.1. Pré-requisitos (Hyper-V)Hipervisor: Microsoft Hyper-V instalado e funcional.Rede: Um "Virtual Switch" do tipo External criado no Hyper-V Manager, conectado à sua placa de rede física.ISO: ISO do Ubuntu Server 22.04 LTS.VMs: Crie 5 novas VMs (1x k8s-cp, 3x k8s-wX, 1x k8s-nfs), conecte todas ao Virtual Switch External e instale o Ubuntu 22.04 em todas.3.2. Configuração Base do S.O. (Ubuntu 22.04)Execute em TODAS as 5 VMs (cp, w1, w2, w3, nfs)Definir IP Estático (Netplan):O Ubuntu 22.04 usa netplan. Edite o arquivo YAML de configuração (ex: /etc/netplan/01-netcfg.yaml).Exemplo de template para k8s-cp (192.168.3.120):YAMLnetwork:
   ethernets:
     eth0: # O nome da sua interface pode variar (ex: ens33)
