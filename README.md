@@ -20,7 +20,7 @@ A arquitetura consiste em um único Virtual Switch no Hyper-V conectado a 5 VMs 
 | NFS Server | `k8s-nfs` | `192.168.3.240` | Armazenamento persistente (Storage) |
 | Rede | `N/A` | `192.168.3.0/24` | Sub-rede do laboratório |
 | Gateway | `N/A` | `192.168.3.254` | Roteador da rede |
-| MetalLB Pool | `N/A` | `192.168.3.200-210` | IPs virtuais para serviços K8s |
+| MetalLB Pool | `N/A` | `192.168.3.90-98` | IPs virtuais para serviços K8s |
 
 ### Diagrama da Arquitetura
 
@@ -82,10 +82,10 @@ graph TD
     end
 ```
 
-3. Passo a Passo: Instalação e Configuração
+## 3. Passo a Passo: Instalação e Configuração
 Esta seção detalha a criação das VMs e a instalação de todos os componentes necessários.
 
-3.1. Pré-requisitos (Hyper-V)
+### 3.1. Pré-requisitos (Hyper-V)
 Hipervisor: Microsoft Hyper-V instalado e funcional.
 
 Rede: Um "Virtual Switch" do tipo External criado no Hyper-V Manager, conectado à sua placa de rede física.
@@ -94,13 +94,14 @@ ISO: ISO do Ubuntu Server 22.04 LTS.
 
 VMs: Crie 5 novas VMs (1x k8s-cp, 3x k8s-wX, 1x k8s-nfs), conecte todas ao Virtual Switch External e instale o Ubuntu 22.04 em todas.
 
-3.2. Configuração Base do S.O. (Ubuntu 22.04)
+### 3.2. Configuração Base do S.O. (Ubuntu 22.04)
 Execute em TODAS as 5 VMs (cp, w1, w2, w3, nfs)
 
 Definir IP Estático (Netplan): O Ubuntu 22.04 usa netplan. Edite o arquivo YAML de configuração (ex: /etc/netplan/01-netcfg.yaml). Exemplo de template para k8s-cp (192.168.3.120):
 
-YAML
 
+YAML
+\`\`\`
 network:
   ethernets:
     eth0: # O nome da sua interface pode variar (ex: ens33)
@@ -113,6 +114,8 @@ network:
       nameservers:
         addresses: [192.168.3.254, 8.8.8.8] # Gateway e Google DNS
   version: 2
+\`\`\`
+
 Importante: Adapte o campo addresses para cada nó (.121, .122, .123, .240).
 
 Aplique a configuração: sudo netplan apply
@@ -120,104 +123,126 @@ Aplique a configuração: sudo netplan apply
 Definir Hostname:
 
 Bash
-
+\`\`\`
 # Exemplo para k8s-cp
 sudo hostnamectl set-hostname k8s-cp
 # (Repita em todos os nós com seus respectivos nomes)
+\`\`\`
+
 Atualizar o Sistema:
 
 Bash
-
+\`\`\`
 sudo apt update
 sudo apt upgrade -y
 Carregar Módulos de Kernel (Apenas nos 4 nós K8s):
+\`\`\`
 
 Bash
-
+\`\`\`
 cat <<EOF | sudo tee /etc/modules-load.d/k8s.conf
 overlay
 br_netfilter
 EOF
 sudo modprobe overlay
 sudo modprobe br_netfilter
+\`\`\`
+
 Configurar Sysctl (Apenas nos 4 nós K8s):
 
 Bash
-
+\`\`\`
 cat <<EOF | sudo tee /etc/sysctl.d/k8s.conf
 net.bridge.bridge-nf-call-iptables  = 1
 net.bridge.bridge-nf-call-ip6tables = 1
 net.ipv4.ip_forward                 = 1
 EOF
 sudo sysctl --system
-3.3. Instalação do Servidor NFS (k8s-nfs)
+\`\`\`
+
+
+### 3.3. Instalação do Servidor NFS (k8s-nfs)
 Execute APENAS na VM k8s-nfs (192.168.3.240)
 
 Instalar Servidor NFS:
 
 Bash
-
+\`\`\`
 sudo apt update
 sudo apt install -y nfs-kernel-server
 Criar Diretório de Compartilhamento:
+\`\`\`
 
 Bash
-
+\`\`\`
 sudo mkdir -p /export/k8s-data
 sudo chown nobody:nogroup /export/k8s-data
 sudo chmod 777 /export/k8s-data
 Configurar Exportação: Edite o arquivo /etc/exports:
+\`\`\`
 
 Bash
-
+\`\`\`
 sudo nano /etc/exports
-Adicione esta linha (autorizando a sua rede 192.168.3.0/24):
+#Adicione esta linha (autorizando a sua rede 192.168.3.0/24):
 
 /export/k8s-data    192.168.3.0/24(rw,sync,no_subtree_check,no_root_squash)
+\`\`\`
+
 Aplicar Configurações:
 
-Bash
 
+Bash
+\`\`\`
 sudo exportfs -a
 sudo systemctl restart nfs-kernel-server
-3.4. Instalação do Runtime (containerd)
+\`\`\`
+
+### 3.4. Instalação do Runtime (containerd)
 Execute APENAS nos 4 nós K8s (cp, w1, w2, w3)
 
 Instalar containerd:
 
 Bash
-
+\`\`\`
 sudo apt install -y containerd
 Configurar cgroup:
+\`\`\`
 
 Bash
-
+\`\`\`
 # Criar arquivo de configuração padrão
 sudo mkdir -p /etc/containerd
 containerd config default | sudo tee /etc/containerd/config.toml
 
 # Habilitar o SystemdCgroup (CRÍTICO)
 sudo sed -i 's/SystemdCgroup = false/SystemdCgroup = true/' /etc/containerd/config.toml
+\`\`\`
 Reiniciar containerd:
 
-Bash
 
+Bash
+\`\`\`
 sudo systemctl restart containerd
-3.5. Instalação do Kubeadm e Kubelet
+\`\`\`
+
+### 3.5. Instalação do Kubeadm e Kubelet
 Execute APENAS nos 4 nós K8s (cp, w1, w2, w3)
 
 Desabilitar Swap (Requisito do Kubelet):
 
 Bash
-
+\`\`\`
 sudo swapoff -a
 # Desabilita permanentemente
 sudo sed -i '/swap/d' /etc/fstab
 sudo rm /swap.img 2>/dev/null || sudo rm /swapfile 2>/dev/null
+\`\`\`
+
 Adicionar Repositório K8s:
 
 Bash
-
+\`\`\`
 sudo apt update
 sudo apt install -y apt-transport-https ca-certificates curl gpg
 
@@ -226,32 +251,39 @@ curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.30/deb/Release.key | sudo gpg --
 
 # Adicionar repositório
 echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.30/deb/ /' | sudo tee /etc/apt/sources.list.d/kubernetes.list
+\`\`\`
+
 Instalar Ferramentas K8s:
 
 Bash
-
+\`\`\`
 sudo apt update
 sudo apt install -y kubelet kubeadm kubectl
 sudo apt-mark hold kubelet kubeadm kubectl
-4. Passo a Passo: Inicialização do Cluster
-4.1. Inicialização do Control Plane
+\`\`\`
+
+## 4. Passo a Passo: Inicialização do Cluster
+### 4.1. Inicialização do Control Plane
 Execute APENAS no k8s-cp (192.168.3.120)
 
 Bash
-
+\`\`\`
 sudo kubeadm init \
   --pod-network-cidr=192.168.0.0/16 \
   --control-plane-endpoint=192.168.3.120
+\`\`\`
+
 Guarde o comando kubeadm join que aparecerá no final.
 
 Para usar o kubectl como usuário normal:
 
 Bash
-
+\`\`\`
 mkdir -p $HOME/.kube
 sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
 sudo chown $(id -u):$(id -g) $HOME/.kube/config
-4.2. Instalação do CNI (Calico)
+
+### 4.2. Instalação do CNI (Calico)
 Execute APENAS no k8s-cp
 
 Bash
@@ -271,8 +303,8 @@ sudo kubeadm join 192.168.3.120:6443 --token <seu-token> \
     --discovery-token-ca-cert-hash sha256:<seu-hash>
 No k8s-cp, execute kubectl get nodes e observe os 3 workers entrarem no cluster com o status Ready.
 
-5. Configuração dos Componentes do Cluster
-5.1. Load Balancer (MetalLB)
+## 5. Configuração dos Componentes do Cluster
+### 5.1. Load Balancer (MetalLB)
 Execute APENAS no k8s-cp
 
 Instalar MetalLB:
@@ -305,7 +337,7 @@ spec:
   - default-pool
 Aplique o arquivo: kubectl apply -f metallb-pool.yaml
 
-5.2. Armazenamento (NFS Provisioner)
+### 5.2. Armazenamento (NFS Provisioner)
 Execute APENAS no k8s-cp
 
 Instalar Cliente NFS (em todos os nós K8s):
@@ -332,7 +364,7 @@ helm install nfs-subdir-external-provisioner nfs-subdir-external-provisioner/nfs
     --set storageClass.defaultClass=true
 Nota: nfs.server aponta para o IP do seu k8s-nfs.
 
-5.3. Otimização de Failover
+### 5.3. Otimização de Failover
 Objetivo: Reduzir o tempo de detecção de falha de nó (padrão de 5+ min).
 
 Problema Identificado: Muitas flags de kube-controller-manager (como --pod-eviction-timeout) estão obsoletas na v1.30 e causam CrashLoopBackOff.
@@ -350,18 +382,19 @@ YAML
     # FLAG ADICIONADA PARA DETECÇÃO RÁPIDA:
     - --node-monitor-grace-period=10s
 ...
-6. Aplicações de Exemplo e Testes
-6.1. App 1: "Onde estou?" (Stateless)
+
+# 6. Aplicações de Exemplo e Testes
+### 6.1. App 1: "Onde estou?" (Stateless)
 Teste: Um Deployment de 3 réplicas com um Service (LoadBalancer) foi criado. A Downward API injetou o nome do nó (spec.nodeName) em uma variável de ambiente ($K8S_NODE_NAME).
 
 Resultado: Acessar o IP do Load Balancer (ex: http://192.168.3.200) e executar um curl em loop demonstrou o balanceamento de carga round-robin entre os pods nos diferentes nós (k8s-w1, k8s-w2, k8s-w3).
 
-6.2. App 2: "Writers/Reader" (Stateful, NFS)
+### 6.2. App 2: "Writers/Reader" (Stateful, NFS)
 Teste: Um PVC com modo ReadWriteMany (RWX) foi criado. Um Deployment de 3 pods ("Writers") e 1 pod ("Reader") montaram o mesmo PVC.
 
 Resultado: Os "Writers" escreveram em um arquivo de log compartilhado (/data/log.txt). Os logs do "Reader" (kubectl logs -f reader-app) mostraram os dados dos 3 escritores sendo gravados em tempo real, validando o armazenamento RWX.
 
-6.3. Correção de Fuso Horário (Timezone)
+### 6.3. Correção de Fuso Horário (Timezone)
 Problema: Os timestamps dos pods (ex: busybox) estavam em UTC, mesmo com os nós em GMT-3.
 
 Solução:
