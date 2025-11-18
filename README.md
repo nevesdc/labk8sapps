@@ -194,7 +194,7 @@ Bash
 
 # Criar arquivo de configuração padrão
 sudo mkdir -p /etc/containerd
-containerd config default | sudo tee /etc/containerá/config.toml
+containerd config default | sudo tee /etc/containerd/config.toml
 
 # Habilitar o SystemdCgroup (CRÍTICO)
 sudo sed -i 's/SystemdCgroup = false/SystemdCgroup = true/' /etc/containerd/config.toml
@@ -222,10 +222,10 @@ sudo apt update
 sudo apt install -y apt-transport-https ca-certificates curl gpg
 
 # Adicionar chave GPG
-curl -fsSL [https://pkgs.k8s.io/core:/stable:/v1.30/deb/Release.key](https://pkgs.k8s.io/core:/stable:/v1.30/deb/Release.key) | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.30/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
 
 # Adicionar repositório
-echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] [https://pkgs.k8s.io/core:/stable:/v1.30/deb/](https://pkgs.k8s.io/core:/stable:/v1.30/deb/) /' | sudo tee /etc/apt/sources.list.d/kubernetes.list
+echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.30/deb/ /' | sudo tee /etc/apt/sources.list.d/kubernetes.list
 Instalar Ferramentas K8s:
 
 Bash
@@ -256,7 +256,7 @@ Execute APENAS no k8s-cp
 
 Bash
 
-kubectl apply -f [https://raw.githubusercontent.com/projectcalico/calico/v3.28.0/manifests/calico.yaml](https://raw.githubusercontent.com/projectcalico/calico/v3.28.0/manifests/calico.yaml)
+kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.28.0/manifests/calico.yaml
 Aguarde alguns minutos. O nó k8s-cp mudará para o status Ready (kubectl get nodes).
 
 4.3. Adição dos Worker Nodes
@@ -279,7 +279,7 @@ Instalar MetalLB:
 
 Bash
 
-kubectl apply -f [https://raw.githubusercontent.com/metallb/metallb/v0.14.7/config/manifests/metallb-native.yaml](https://raw.githubusercontent.com/metallb/metallb/v0.14.7/config/manifests/metallb-native.yaml)
+kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.14.7/config/manifests/metallb-native.yaml
 Aguarde os pods em metallb-system ficarem Running.
 
 Configurar Pool de IPs: Crie um arquivo metallb-pool.yaml com o pool 192.168.3.200-210:
@@ -320,7 +320,7 @@ Instalar Provisionador (Helm):
 
 Bash
 
-helm repo add nfs-subdir-external-provisioner [https://kubernetes-sigs.github.io/nfs-subdir-external-provisioner/](https://kubernetes-sigs.github.io/nfs-subdir-external-provisioner/)
+helm repo add nfs-subdir-external-provisioner https://kubernetes-sigs.github.io/nfs-subdir-external-provisioner/
 helm repo update
 
 helm install nfs-subdir-external-provisioner nfs-subdir-external-provisioner/nfs-subdir-external-provisioner \
@@ -390,3 +390,4 @@ YAML
         hostPath:
           path: /etc/localtime
           type: File
+```
