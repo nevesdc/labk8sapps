@@ -100,8 +100,8 @@ Execute em TODAS as 5 VMs (cp, w1, w2, w3, nfs)
 Definir IP Estático (Netplan): O Ubuntu 22.04 usa netplan. Edite o arquivo YAML de configuração (ex: /etc/netplan/01-netcfg.yaml). Exemplo de template para k8s-cp (192.168.3.120):
 
 
-YAML
-\`\`\`
+```YAML
+
 network:
   ethernets:
     eth0: # O nome da sua interface pode variar (ex: ens33)
@@ -114,7 +114,7 @@ network:
       nameservers:
         addresses: [192.168.3.254, 8.8.8.8] # Gateway e Google DNS
   version: 2
-\`\`\`
+```
 
 Importante: Adapte o campo addresses para cada nó (.121, .122, .123, .240).
 
