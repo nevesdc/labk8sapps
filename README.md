@@ -574,11 +574,10 @@ sudo chown $(id -u):$(id -g) $HOME/.kube/config
 
 ### 4.2. Instalação do CNI (Calico)
 
-Execute APENAS no k8s-cp
 
 ```
 
-
+Execute APENAS no k8s-cp
 
 Bash
 
@@ -586,10 +585,9 @@ Bash
 
 kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.28.0/manifests/calico.yaml
 
-Aguarde alguns minutos. O nó k8s-cp mudará para o status Ready (kubectl get nodes).
-
 ```
 
+Aguarde alguns minutos. O nó k8s-cp mudará para o status Ready (kubectl get nodes).
 
 
 4.3. Adição dos Worker Nodes
@@ -597,9 +595,7 @@ Aguarde alguns minutos. O nó k8s-cp mudará para o status Ready (kubectl get no
 Execute APENAS em k8s-w1, k8s-w2, k8s-w3
 
 
-
 Execute o comando kubeadm join (com sudo) que você salvou do passo 4.1.
-
 
 
 Bash
@@ -750,11 +746,11 @@ helm install nfs-subdir-external-provisioner nfs-subdir-external-provisioner/nfs
 
     --set storageClass.defaultClass=true
 
-Nota: nfs.server aponta para o IP do seu k8s-nfs.
+
 
 ```
 
-
+Nota: nfs.server aponta para o IP do seu k8s-nfs.
 
 ### 5.3. Otimização de Failover
 
