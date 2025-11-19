@@ -20,30 +20,17 @@ A rede do laboratório é a **`192.168.3.0/24`**.
 
 A arquitetura consiste em um único Virtual Switch no Hyper-V conectado a 5 VMs com IPs estáticos. O MetalLB gerencia um pool de IPs virtuais para serviços externos.
 
-
-
 ### Planejamento de IPs
-
 | VM / Serviço | Hostname | IP Estático | Propósito |
-
 | :--- | :--- | :--- | :--- |
-
 | Control Plane | `k8s-cp` | `192.168.3.120` | Gerencia o cluster K8s (API, etcd) |
-
 | Worker 1 | `k8s-w1` | `192.168.3.121` | Executa aplicações (Pods) |
-
 | Worker 2 | `k8s-w2` | `192.168.3.122` | Executa aplicações (Pods) |
-
 | Worker 3 | `k8s-w3` | `192.168.3.123` | Executa aplicações (Pods) |
-
 | NFS Server | `k8s-nfs` | `192.168.3.240` | Armazenamento persistente (Storage) |
-
 | Rede | `N/A` | `192.168.3.0/24` | Sub-rede do laboratório |
-
 | Gateway | `N/A` | `192.168.3.254` | Roteador da rede |
-
 | MetalLB Pool | `N/A` | `192.168.3.90-98` | IPs virtuais para serviços K8s |
-
 
 
 ### Diagrama da Arquitetura
