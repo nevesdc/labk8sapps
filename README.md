@@ -151,14 +151,14 @@ sudo modprobe br_netfilter
 Configurar Sysctl (Apenas nos 4 nós K8s):
 
 Bash
-\`\`\`
+```BASH
 cat <<EOF | sudo tee /etc/sysctl.d/k8s.conf
 net.bridge.bridge-nf-call-iptables  = 1
 net.bridge.bridge-nf-call-ip6tables = 1
 net.ipv4.ip_forward                 = 1
 EOF
 sudo sysctl --system
-\`\`\`
+```
 
 
 ### 3.3. Instalação do Servidor NFS (k8s-nfs)
@@ -167,36 +167,36 @@ Execute APENAS na VM k8s-nfs (192.168.3.240)
 Instalar Servidor NFS:
 
 Bash
-\`\`\`
+```BASH
 sudo apt update
 sudo apt install -y nfs-kernel-server
 Criar Diretório de Compartilhamento:
-\`\`\`
+```
 
 Bash
-\`\`\`
+```BASH
 sudo mkdir -p /export/k8s-data
 sudo chown nobody:nogroup /export/k8s-data
 sudo chmod 777 /export/k8s-data
 Configurar Exportação: Edite o arquivo /etc/exports:
-\`\`\`
+```
 
 Bash
-\`\`\`
+```BASH
 sudo nano /etc/exports
 #Adicione esta linha (autorizando a sua rede 192.168.3.0/24):
 
 /export/k8s-data    192.168.3.0/24(rw,sync,no_subtree_check,no_root_squash)
-\`\`\`
+```
 
 Aplicar Configurações:
 
 
 Bash
-\`\`\`
+```BASH
 sudo exportfs -a
 sudo systemctl restart nfs-kernel-server
-\`\`\`
+```
 
 ### 3.4. Instalação do Runtime (containerd)
 Execute APENAS nos 4 nós K8s (cp, w1, w2, w3)
@@ -204,27 +204,28 @@ Execute APENAS nos 4 nós K8s (cp, w1, w2, w3)
 Instalar containerd:
 
 Bash
-\`\`\`
+```BASH
 sudo apt install -y containerd
+
+```
 Configurar cgroup:
-\`\`\`
 
 Bash
-\`\`\`
+```BASH
 # Criar arquivo de configuração padrão
 sudo mkdir -p /etc/containerd
 containerd config default | sudo tee /etc/containerd/config.toml
 
 # Habilitar o SystemdCgroup (CRÍTICO)
 sudo sed -i 's/SystemdCgroup = false/SystemdCgroup = true/' /etc/containerd/config.toml
-\`\`\`
+```
+
 Reiniciar containerd:
 
-
 Bash
-\`\`\`
+```BASH
 sudo systemctl restart containerd
-\`\`\`
+```
 
 ### 3.5. Instalação do Kubeadm e Kubelet
 Execute APENAS nos 4 nós K8s (cp, w1, w2, w3)
@@ -232,17 +233,17 @@ Execute APENAS nos 4 nós K8s (cp, w1, w2, w3)
 Desabilitar Swap (Requisito do Kubelet):
 
 Bash
-\`\`\`
+```BASH
 sudo swapoff -a
 # Desabilita permanentemente
 sudo sed -i '/swap/d' /etc/fstab
 sudo rm /swap.img 2>/dev/null || sudo rm /swapfile 2>/dev/null
-\`\`\`
+```
 
 Adicionar Repositório K8s:
 
 Bash
-\`\`\`
+```BASH
 sudo apt update
 sudo apt install -y apt-transport-https ca-certificates curl gpg
 
@@ -251,45 +252,47 @@ curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.30/deb/Release.key | sudo gpg --
 
 # Adicionar repositório
 echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.30/deb/ /' | sudo tee /etc/apt/sources.list.d/kubernetes.list
-\`\`\`
+```
 
 Instalar Ferramentas K8s:
 
 Bash
-\`\`\`
+```BASH
 sudo apt update
 sudo apt install -y kubelet kubeadm kubectl
 sudo apt-mark hold kubelet kubeadm kubectl
-\`\`\`
+```
 
 ## 4. Passo a Passo: Inicialização do Cluster
 ### 4.1. Inicialização do Control Plane
 Execute APENAS no k8s-cp (192.168.3.120)
 
 Bash
-\`\`\`
+```BASH
 sudo kubeadm init \
   --pod-network-cidr=192.168.0.0/16 \
   --control-plane-endpoint=192.168.3.120
-\`\`\`
+```
 
 Guarde o comando kubeadm join que aparecerá no final.
 
 Para usar o kubectl como usuário normal:
 
 Bash
-\`\`\`
+```BASH
 mkdir -p $HOME/.kube
 sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
 sudo chown $(id -u):$(id -g) $HOME/.kube/config
 
 ### 4.2. Instalação do CNI (Calico)
 Execute APENAS no k8s-cp
+```
 
 Bash
-
+```BASH
 kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.28.0/manifests/calico.yaml
 Aguarde alguns minutos. O nó k8s-cp mudará para o status Ready (kubectl get nodes).
+```
 
 4.3. Adição dos Worker Nodes
 Execute APENAS em k8s-w1, k8s-w2, k8s-w3
@@ -297,7 +300,7 @@ Execute APENAS em k8s-w1, k8s-w2, k8s-w3
 Execute o comando kubeadm join (com sudo) que você salvou do passo 4.1.
 
 Bash
-
+```BASH
 # Exemplo
 sudo kubeadm join 192.168.3.120:6443 --token <seu-token> \
     --discovery-token-ca-cert-hash sha256:<seu-hash>
@@ -306,18 +309,21 @@ No k8s-cp, execute kubectl get nodes e observe os 3 workers entrarem no cluster 
 ## 5. Configuração dos Componentes do Cluster
 ### 5.1. Load Balancer (MetalLB)
 Execute APENAS no k8s-cp
+```
 
 Instalar MetalLB:
 
 Bash
-
+```BASH
 kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.14.7/config/manifests/metallb-native.yaml
+```
+
 Aguarde os pods em metallb-system ficarem Running.
 
 Configurar Pool de IPs: Crie um arquivo metallb-pool.yaml com o pool 192.168.3.200-210:
 
 YAML
-
+```YAML
 apiVersion: metallb.io/v1beta1
 kind: IPAddressPool
 metadata:
@@ -335,7 +341,13 @@ metadata:
 spec:
   ipAddressPools:
   - default-pool
-Aplique o arquivo: kubectl apply -f metallb-pool.yaml
+```
+
+Aplique o arquivo: 
+
+```BASH
+kubectl apply -f metallb-pool.yaml
+```
 
 ### 5.2. Armazenamento (NFS Provisioner)
 Execute APENAS no k8s-cp
@@ -345,13 +357,15 @@ Instalar Cliente NFS (em todos os nós K8s):
 Execute em k8s-cp, k8s-w1, k8s-w2, k8s-w3:
 
 Bash
-
+```BASH
 sudo apt update
 sudo apt install -y nfs-common
+```
+
 Instalar Provisionador (Helm):
 
 Bash
-
+```BASH
 helm repo add nfs-subdir-external-provisioner https://kubernetes-sigs.github.io/nfs-subdir-external-provisioner/
 helm repo update
 
@@ -363,6 +377,7 @@ helm install nfs-subdir-external-provisioner nfs-subdir-external-provisioner/nfs
     --set storageClass.name=nfs-storage \
     --set storageClass.defaultClass=true
 Nota: nfs.server aponta para o IP do seu k8s-nfs.
+```
 
 ### 5.3. Otimização de Failover
 Objetivo: Reduzir o tempo de detecção de falha de nó (padrão de 5+ min).
@@ -372,7 +387,7 @@ Problema Identificado: Muitas flags de kube-controller-manager (como --pod-evict
 Solução Final: Apenas a flag --node-monitor-grace-period foi adicionada ao arquivo /etc/kubernetes/manifests/kube-controller-manager.yaml no nó k8s-cp.
 
 YAML
-
+```YAML
 # Trecho do /etc/kubernetes/manifests/kube-controller-manager.yaml
 ...
   containers:
@@ -382,6 +397,7 @@ YAML
     # FLAG ADICIONADA PARA DETECÇÃO RÁPIDA:
     - --node-monitor-grace-period=10s
 ...
+```
 
 # 6. Aplicações de Exemplo e Testes
 ### 6.1. App 1: "Onde estou?" (Stateless)
@@ -404,7 +420,7 @@ A imagem do contêiner foi alterada de busybox para ubuntu:latest (que inclui tz
 O fuso horário do host (/etc/localtime) foi montado no contêiner via hostPath para garantir o offset de fuso correto.
 
 YAML
-
+```YAML
 # Trecho da solução de Timezone no Deployment
       containers:
       - name: writer
@@ -423,4 +439,9 @@ YAML
         hostPath:
           path: /etc/localtime
           type: File
+
 ```
+
+
+
+
