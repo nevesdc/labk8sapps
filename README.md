@@ -99,7 +99,7 @@ Execute em TODAS as 5 VMs (cp, w1, w2, w3, nfs)
 
 Definir IP Estático (Netplan): O Ubuntu 22.04 usa netplan. Edite o arquivo YAML de configuração (ex: /etc/netplan/01-netcfg.yaml). Exemplo de template para k8s-cp (192.168.3.120):
 
-
+YAML
 ```YAML
 
 network:
@@ -123,30 +123,30 @@ Aplique a configuração: sudo netplan apply
 Definir Hostname:
 
 Bash
-\`\`\`
+```BASH
 # Exemplo para k8s-cp
 sudo hostnamectl set-hostname k8s-cp
 # (Repita em todos os nós com seus respectivos nomes)
-\`\`\`
+```
 
 Atualizar o Sistema:
 
 Bash
-\`\`\`
+```BASH
 sudo apt update
 sudo apt upgrade -y
 Carregar Módulos de Kernel (Apenas nos 4 nós K8s):
-\`\`\`
+```
 
 Bash
-\`\`\`
+```BASH
 cat <<EOF | sudo tee /etc/modules-load.d/k8s.conf
 overlay
 br_netfilter
 EOF
 sudo modprobe overlay
 sudo modprobe br_netfilter
-\`\`\`
+```
 
 Configurar Sysctl (Apenas nos 4 nós K8s):
 
