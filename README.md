@@ -135,8 +135,9 @@ Bash
 ```BASH
 sudo apt update
 sudo apt upgrade -y
-Carregar Módulos de Kernel (Apenas nos 4 nós K8s):
+
 ```
+Carregar Módulos de Kernel (Apenas nos 4 nós K8s):
 
 Bash
 ```BASH
